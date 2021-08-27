@@ -1,0 +1,35 @@
+#!/usr/bin/perl
+$HOME=$ENV{'HOME'};
+$USER_HOME=$ENV{'USER_HOME'};
+$DISPLAY=$ENV{'DISPLAY'};
+$usergroup=`id -G | sed -e 's/ / --group-add=/g' | sed -e 's/^/--group-add=/g'`;
+chomp($usergroup);
+$uid=`id -u`;
+chomp($uid);
+$gid=`id -g`;
+chomp($gid);
+
+@gpu=$ENV{'CUDA_VISIBLE_DEVICES_ORIG'};
+$host_name=`hostname`;
+chomp($host_name);
+
+print "DISPLAY : $DISPLAY\n";
+print "CUDA_VISIBLE_DEVICES_ORIG : @gpu\n";
+print "host_name : $host_name\n";
+
+$NUMCPU=`lshosts $host_name |grep -v HOST_NAME | awk ' { print \$5 }'`;
+$NUMGPU=`lsload -gpu $host_name |grep -v HOST_NAME | awk '{ print \$3}'`;
+$MEMSIZE=`free -m | grep Mem | awk '{print \$2}'`;
+
+@ngpu=split(",",$t_gpu);
+
+$ALLOCGPU=$#ngpu+1;
+$ALLOCCPU=int($NUMCPU*$ALLOCGPU/$NUMGPU);
+$SHRMEM=131072;
+$ALLOCMEM=int($MEMSIZE*$ALLOCGPU/$NUMGPU);
+$GPUS="\'\"device=@gpu\"\'";
+
+$commands="docker run -w $HOME -it --cpus=\"$ALLOCCPU\" --memory=\"$ALLOCMEM\"m --shm-size=\"$SHRMEM\"m --rm --user $uid:$gid $usergroup --gpus $GPUS --security-opt seccomp=unconfined --name \$LSB_JOBID -v $HOME:$HOME $USER_HOME -v /apps:/apps:ro -v /var:/var -v /LSF:/LSF:ro -v /project_scratch:/project_scratch -v /usr/lib:/usr/lib:ro -v /usr/lib64:/usr/lib64:ro -v /usr/bin:/usr/bin:ro -v /usr/share:/usr/share:ro -v /etc/localtime:/etc/localtime:ro -e LSF_ENVDIR=/LSF/conf -e LSF_SERVERDIR=/LSF/10.1/linux3.10-glibc2.17-x86_64/etc -e LSF_LIBDIR=/LSF/10.1/linux3.10-glibc2.17-x86_64/lib -e PATH=\$PATH:/LSF/scripts:/LSF/10.1/linux3.10-glibc2.17-x86_64/bin:/LSF/10.1/linux3.10-glibc2.17-x86_64/etc:/bin --net=host -e DISPLAY=$DISPLAY -e HOME=$HOME -v /etc/ssh/sshd_config:/etc/ssh/sshd_config rhel:8.3 timeout -s 9 86364s /usr/bin/uxterm -fa consolas -fs 11";
+#$commands="docker run -w $HOME -it --cpus=\"$ALLOCCPU\" --memory=\"$ALLOCMEM\"m --shm-size=\"$SHRMEM\"m --rm --user $uid:$gid $usergroup --gpus $GPUS --security-opt seccomp=unconfined --name \$LSB_JOBID -v $HOME:$HOME $USER_HOME -v /apps:/apps:ro -v /var:/var -v /LSF:/LSF:ro -v /project_scratch:/project_scratch -v /usr/lib:/usr/lib:ro -v /usr/lib64:/usr/lib64:ro -v /usr/bin:/usr/bin:ro -v /tmp/.X11-unix:/tmp/.X11-unix:ro -v /etc/localtime:/etc/localtime:ro -e LSF_ENVDIR=/LSF/conf -e LSF_SERVERDIR=/LSF/10.1/linux3.10-glibc2.17-x86_64/etc -e LSF_LIBDIR=/LSF/10.1/linux3.10-glibc2.17-x86_64/lib -e PATH=\$PATH:/LSF/scripts:/LSF/10.1/linux3.10-glibc2.17-x86_64/bin:/LSF/10.1/linux3.10-glibc2.17-x86_64/etc:/bin --net=host -e DISPLAY=$DISPLAY -e HOME=$HOME -v /etc/ssh/sshd_config:/etc/ssh/sshd_config rhel:8.3 timeout -s 9 86364s /usr/bin/uxterm -fa consolas -fs 11";
+
+system($commands);
