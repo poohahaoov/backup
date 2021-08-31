@@ -1,0 +1,7 @@
+#%Module
+
+prepend-path            PATH            /apps/mpi/gcc/RHEL8/openmpi-4.1.0-cu112-ucx1110-nvhpc/bin
+prepend-path            PATH            /apps/mpi/gcc/RHEL8/ucx-1.11.0-cu112-nvhpc/bin
+prepend-path            LD_LIBRARY_PATH /apps/mpi/gcc/RHEL8/openmpi-4.1.0-cu112-ucx1110-nvhpc/lib
+prepend-path            LD_LIBRARY_PATH /apps/mpi/gcc/RHEL8/ucx-1.11.0-cu112-nvhpc/lib
+~
