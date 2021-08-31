@@ -1,0 +1,73 @@
+# your use of them is governed by the express license under which they were
+# provided to you (License). Unless the License provides otherwise, you may
+# not use, modify, copy, publish, distribute, disclose or transmit this
+# software or the related documents without Intel's prior written permission.
+#
+# This software and the related documents are provided as is, with no express
+# or implied warranties, other than those that are expressly stated in the
+# License.
+#
+##
+## Intel(R) MPI Library modulefile
+##
+
+set scriptpath "${ModulesCurrentModulefile}"
+
+if { "[file type "$scriptpath"]" eq "link" } {
+    set scriptpath "[file readlink "$scriptpath"]"
+}
+
+set scriptpath "[file normalize "$scriptpath"]"
+
+proc ModulesHelp { } {
+        global dotversion
+        puts stderr " Intel(R) MPI Library"
+}
+
+module-whatis       "Sets up the Intel(R) MPI Library environment"
+
+set                 topdir                 [file dirname [file dirname [file dirname ${scriptpath} ]]]
+
+setenv              I_MPI_ROOT             $topdir
+
+set i_mpi_library_kind "release"
+
+if { [info exists ::env(I_MPI_LIBRARY_KIND) ] } {
+    switch "$::env(I_MPI_LIBRARY_KIND)" {
+        "release" -
+        "release_mt" -
+        "debug" -
+        "debug_mt" {
+            set i_mpi_library_kind "$::env(I_MPI_LIBRARY_KIND)"
+        }
+        default {
+        }
+    }
+}
+
+prepend-path        CLASSPATH              $topdir/intel64/lib/mpi.jar
+prepend-path        PATH                   $topdir/intel64/bin
+prepend-path        LD_LIBRARY_PATH        $topdir/intel64/lib/$i_mpi_library_kind:$topdir/intel64/lib
+prepend-path        MANPATH                $topdir/man
+
+if { [info exists ::env(I_MPI_OFI_LIBRARY_INTERNAL) ] } {
+    set i_mpi_ofi_library_internal $::env(I_MPI_OFI_LIBRARY_INTERNAL)
+} else {
+    set i_mpi_ofi_library_internal "yes"
+}
+
+switch "$i_mpi_ofi_library_internal" {
+    "0" -
+    "no" -
+    "off" -
+    "disable" {
+    }
+    default {
+        setenv              FI_PROVIDER_PATH       $topdir/intel64/libfabric/lib/prov:/usr/lib64/libfabric
+
+        prepend-path        PATH                   $topdir/intel64/libfabric/bin
+        prepend-path        LD_LIBRARY_PATH        $topdir/intel64/libfabric/lib
+        prepend-path        LIBRARY_PATH           $topdir/intel64/libfabric/lib
+    }
+}
+                                                                                    
